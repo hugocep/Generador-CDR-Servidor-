@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de CDRs</title>
+<style>
+:root{--bg:#f4f6f9;--panel:#fff;--txt:#1d2430;--mut:#5d6878;--borde:#d6dce5;--acento:#0b5cad;--acento2:#e8f1fb;--ok:#1d7a3a;--okbg:#e7f5ec;--err:#b3261e;--errbg:#fdecea;--warn:#8a5a00;--warnbg:#fff4dc;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#14181e;--panel:#1d232b;--txt:#e3e8ef;--mut:#9aa5b4;--borde:#34404e;--acento:#5aa2ef;--acento2:#1f3147;--ok:#6fd08f;--okbg:#17301f;--err:#ff8a80;--errbg:#3a1c1a;--warn:#f0c060;--warnbg:#3a2f14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 20px 8px;max-width:1200px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px}
+header p{margin:0;color:var(--mut);font-size:13px}
+main{max-width:1200px;margin:0 auto;padding:8px 20px 40px;display:grid;gap:16px;grid-template-columns:minmax(0,430px) minmax(0,1fr)}
+@media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:16px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1;padding:9px;border:1px solid var(--borde);background:transparent;color:var(--txt);border-radius:8px;font-weight:600;cursor:pointer}
+.tabs button.activo{background:var(--acento);border-color:var(--acento);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.full{grid-column:1/-1}
+label{display:block;font-size:12.5px;font-weight:600;margin-bottom:3px}
+label small{font-weight:400;color:var(--mut)}
+input,select{width:100%;padding:7px 9px;border:1px solid var(--borde);border-radius:7px;background:var(--panel);color:var(--txt);font:inherit}
+input:focus,select:focus{outline:2px solid var(--acento);outline-offset:-1px}
+.chk{display:flex;align-items:center;gap:7px;font-weight:500;font-size:13.5px}
+.chk input{width:auto}
+fieldset{border:1px dashed var(--borde);border-radius:8px;padding:10px 12px 12px;margin:4px 0 0}
+legend{font-size:12.5px;font-weight:700;color:var(--acento);padding:0 4px}
+.acciones{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{padding:9px 16px;border-radius:8px;border:1px solid var(--acento);background:var(--acento);color:#fff;font-weight:600;cursor:pointer}
+.btn.sec{background:transparent;color:var(--acento)}
+.btn:disabled{opacity:.6;cursor:wait}
+.ejemplos{margin-top:10px;font-size:12.5px;color:var(--mut)}
+.ejemplos a{color:var(--acento);cursor:pointer;text-decoration:underline;margin-right:10px}
+.estado{padding:10px 12px;border-radius:8px;margin-bottom:12px;font-weight:600}
+.estado.ok{background:var(--okbg);color:var(--ok)}
+.estado.err{background:var(--errbg);color:var(--err)}
+.aviso{background:var(--warnbg);color:var(--warn);padding:8px 12px;border-radius:8px;margin-bottom:10px;font-size:13px}
+h2{font-size:15px;margin:16px 0 6px}
+h2:first-child{margin-top:0}
+pre{background:var(--bg);border:1px solid var(--borde);border-radius:8px;padding:10px;overflow:auto;font:12.5px/1.5 var(--mono);margin:0;white-space:pre}
+pre.cmd{white-space:pre-wrap;word-break:break-all}
+.resumen{font:13px/1.5 var(--mono);background:var(--acento2);border-radius:8px;padding:8px 10px;margin-bottom:6px;overflow-wrap:anywhere}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--borde);padding:4px 8px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--mut)}
+td.n{width:48px;color:var(--mut)}
+td.v{font-family:var(--mono);overflow-wrap:anywhere}
+tr.vacio td{opacity:.45}
+.tablawrap{max-height:460px;overflow:auto;border:1px solid var(--borde);border-radius:8px}
+.fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mut{color:var(--mut);font-size:12.5px}
+a.dl{color:var(--acento)}
+details summary{cursor:pointer;font-weight:600;margin:6px 0}
+.vacioRes{color:var(--mut);text-align:center;padding:40px 10px}
+</style>
+</head>
+<body>
+<header>
+<h1>Generador de CDRs &middot; prueba local</h1>
+<p>Misma logica que los scripts corregidos del servidor (new_voz_nacional_campos.sh / new_sms_nacional_campos.sh). Carpeta de trabajo: <span id="base"></span></p>
+</header>
+<main>
+<section class="panel">
+<div class="tabs"><button type="button" id="tabVoz" class="activo">Voz</button><button type="button" id="tabSms">SMS</button></div>
+<div id="avisosIni"></div>
+<form id="f" autocomplete="off">
+<div class="grid">
+<div><label>Fecha</label><input type="date" name="fecha" required></div>
+<div><label>Cantidad de CDRs</label><input type="number" name="cdrs" min="1" max="100000" value="1" required></div>
+<div><label>Numero A <small>(cliente, 10 digitos)</small></label><input name="a" inputmode="numeric" maxlength="10" required></div>
+<div><label>IMSI <small>(15 digitos)</small></label><input name="imsi" inputmode="numeric" maxlength="15" required></div>
+<div class="full"><label>Numero B <small>(vacio = aleatorio; acepta 0031..., +31..., 31...)</small></label><input name="b" placeholder="ej. +31 6 1234 5678 o 5512345678"></div>
+<div class="full"><label>Destino / estado <small>(vacio = sin destino; no hace falta si B es internacional)</small></label><input name="destino" list="listaDestinos" placeholder="ej. CDMX, DEU, NLD"><datalist id="listaDestinos"></datalist></div>
+<div><label>Consumo</label><select name="direccion"><option>SALIENTE</option><option>ENTRANTE</option><option class="soloVoz">PATROCINADA</option></select></div>
+<div><label>Marcacion</label><select name="marcacion"><option>NORMAL</option><option>CORTA</option><option>PORCOBRAR</option><option class="soloVoz">VIDEOLLAMADA</option></select></div>
+<div><label>Hora inicio <small class="soloVoz">(vacio = aleatoria)</small></label><input type="time" step="1" name="horaIni" value="10:00:00"></div>
+<div class="soloVoz"><label>Hora fin <small>(vacio = aleatoria)</small></label><input type="time" step="1" name="horaFin" value="10:05:00"></div>
+<div class="soloSms"><label>ID matriz <small>(vacio = automatico)</small></label><input name="idSms"></div>
+<div class="soloVoz full"><label>ID matriz <small>(vacio = automatico)</small></label><input name="idVoz"></div>
+<fieldset class="full"><legend>Roaming</legend>
+<label>VLR del pais visitado <small>(vacio = el cliente esta en Mexico)</small></label>
+<input name="vlr" placeholder="ej. 31653131232 (Paises Bajos) / 491770610000 (Alemania)">
+</fieldset>
+<div class="full fila"><label class="chk"><input type="checkbox" name="nuevo"> Generar en un archivo nuevo</label><label class="chk soloSms"><input type="checkbox" name="rp"> RP</label></div>
+</div>
+<div class="acciones"><button class="btn" id="btnGenerar" type="submit">Generar CDR</button><button class="btn sec" type="button" id="btnCarpeta">Abrir carpeta CDR</button></div>
+<div class="ejemplos">Cargar ejemplo: <a id="ejVoz" class="soloVoz">llamada en Paises Bajos a numero +31</a><a id="ejSms" class="soloSms">SMS entrante de Paises Bajos estando en Alemania</a></div>
+</form>
+</section>
+<section class="panel" id="res"><div class="vacioRes">Capture los datos y presione <b>Generar CDR</b>.<br>Aqui se muestra el CDR generado campo por campo.</div></section>
+</main>
+<script>
+const $=s=>document.querySelector(s), f=$('#f');
+let tipo='voz';
+const guardar=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}, leer=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function hoy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+f.fecha.value=hoy();
+['a','imsi'].forEach(k=>{const v=leer('cdr_'+k);if(v)f[k].value=v});
+function ponerTipo(t){tipo=t;$('#tabVoz').classList.toggle('activo',t==='voz');$('#tabSms').classList.toggle('activo',t==='sms');
+ document.querySelectorAll('.soloVoz').forEach(e=>e.style.display=t==='voz'?'':'none');
+ document.querySelectorAll('.soloSms').forEach(e=>e.style.display=t==='sms'?'':'none');
+ for(const s of [f.direccion,f.marcacion]){if(s.selectedOptions[0]&&s.selectedOptions[0].style.display==='none')s.selectedIndex=0}
+ guardar('cdr_tipo',t)}
+$('#tabVoz').onclick=()=>ponerTipo('voz');$('#tabSms').onclick=()=>ponerTipo('sms');
+ponerTipo(leer('cdr_tipo')==='sms'?'sms':'voz');
+$('#ejVoz').onclick=()=>{f.b.value='+31 6 1234 5678';f.destino.value='';f.direccion.value='SALIENTE';f.marcacion.value='NORMAL';f.horaIni.value='10:00:00';f.horaFin.value='10:05:00';f.vlr.value='31653131232'};
+$('#ejSms').onclick=()=>{f.b.value='0031612345678';f.destino.value='';f.direccion.value='ENTRANTE';f.marcacion.value='NORMAL';f.horaIni.value='10:00:00';f.vlr.value='491770610000'};
+fetch('api/opciones').then(r=>r.json()).then(o=>{
+ $('#base').textContent=o.base;
+ $('#listaDestinos').innerHTML=[...(o.estados||[]).map(e=>`<option value="${esc(e)}">estado</option>`),...(o.grupos||[]).map(g=>{const k=g.split(' ')[0];return `<option value="${esc(k)}">${esc(g)}</option>`})].join('');
+ $('#avisosIni').innerHTML=(o.avisos||[]).map(a=>`<div class="aviso">${esc(a)}</div>`).join('');
+}).catch(()=>{});
+$('#btnCarpeta').onclick=()=>fetch('api/abrir-carpeta',{method:'POST'});
+function tabla(d){return `<div class="tablawrap"><table><thead><tr><th>Campo</th><th>Valor</th><th>Descripcion</th></tr></thead><tbody>${
+ d.campos.map(c=>`<tr class="${c.valor===''?'vacio':''}"><td class="n">${c.n}</td><td class="v">${esc(c.valor)}</td><td>${esc(c.desc)}</td></tr>`).join('')}</tbody></table></div>`}
+async function listaArchivos(){const l=await (await fetch('api/archivos')).json();
+ return (l||[]).map(a=>`<div><a class="dl" href="descargar?f=${encodeURIComponent(a.ruta)}">${esc(a.ruta)}</a> <span class="mut">${a.lineas} lineas &middot; ${esc(a.fecha)}</span></div>`).join('')||'<span class="mut">Sin archivos</span>'}
+f.onsubmit=async ev=>{ev.preventDefault();const btn=$('#btnGenerar');btn.disabled=true;
+ guardar('cdr_a',f.a.value);guardar('cdr_imsi',f.imsi.value);
+ const body={tipo,fecha:f.fecha.value,cdrs:f.cdrs.value,a:f.a.value,imsi:f.imsi.value,b:f.b.value,destino:f.destino.value,direccion:f.direccion.value,
+  horaIni:f.horaIni.value,horaFin:f.horaFin.value,id:tipo==='voz'?f.idVoz.value:f.idSms.value,marcacion:f.marcacion.value,nuevo:f.nuevo.checked,rp:f.rp.checked,vlr:f.vlr.value};
+ try{const r=await fetch('api/generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error(await r.text());const d=await r.json();
+  let h=d.error?`<div class="estado err">No se genero: ${esc(d.error)}</div>`:`<div class="estado ok">Se generaron ${d.lineas.length} CDR(s) de ${d.tipo.toUpperCase()}</div>`;
+  h+=(d.avisos||[]).map(a=>`<div class="aviso">${esc(a)}</div>`).join('');
+  if(d.detalles&&d.detalles.length){h+='<h2>Resumen</h2>'+d.detalles.slice(0,5).map(x=>`<div class="resumen">${esc(x.resumen)}</div>`).join('');
+   if(d.detalles.length>5)h+=`<div class="mut">(${d.lineas.length} CDRs; se muestran los primeros 5)</div>`}
+  h+=`<h2>Comando equivalente en el servidor</h2><pre class="cmd">${esc(d.comando)}</pre>`;
+  if(d.lineas&&d.lineas.length){h+=`<h2>CDR generado${d.lineas.length>1?'s':''}</h2><pre>${esc(d.lineas.slice(0,200).join('\n'))}</pre>`;
+   if(d.contenido&&d.contenido.length)h+=`<h2>Archivo de contenido (por cobrar)</h2><pre>${esc(d.contenido.slice(0,50).join('\n'))}</pre>`;
+   h+='<h2>Campos del primer CDR</h2>'+tabla(d.detalles[0]);
+   if(d.detalles.length>1)h+=d.detalles.slice(1,10).map((x,i)=>`<details><summary>Campos del CDR ${i+2}</summary>${tabla(x)}</details>`).join('')}
+  h+=`<details><summary>Salida del generador</summary><pre>${esc(d.log)}</pre></details>`;
+  h+='<h2>Archivos en CDR/</h2>'+await listaArchivos();
+  $('#res').innerHTML=h;
+ }catch(e){$('#res').innerHTML=`<div class="estado err">Error: ${esc(e.message)}</div>`}
+ finally{btn.disabled=false}};
+</script>
+</body>
+</html>
