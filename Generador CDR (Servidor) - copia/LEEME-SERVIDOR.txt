@@ -1,0 +1,104 @@
+====================================================================
+  GENERADOR DE CDRs - SERVIDOR (Python)
+====================================================================
+
+QUE ES
+  Version web del generador. Corre en un servidor y todos entran
+  desde el navegador; no se instala nada en las computadoras.
+  Funciona con Python 2.7 o Python 3 (solo libreria estandar).
+
+--------------------------------------------------------------------
+ACCESO
+--------------------------------------------------------------------
+  http://<IP-del-servidor>:5000/login
+  (ejemplo:  http://10.119.155.101:5000/login )
+
+  - La sesion queda guardada ~12 horas: si refrescas o cierras y
+    vuelves a abrir el navegador, sigues adentro.
+  - Boton "Cerrar sesion" arriba a la derecha.
+
+--------------------------------------------------------------------
+CUENTAS  (se administran en el servidor, por consola)
+--------------------------------------------------------------------
+  Las contrasenas NO se ven en ningun archivo (van cifradas).
+
+  Alta de empleados de TU equipo (uno o varios):
+      python admin.py add 12345 23456 34567
+
+  Alta de OTRA area (para que NO vea las lineas de tu equipo):
+      python admin.py add --team VENTAS 99999
+
+  Cada cuenta nueva entra con:
+      usuario    = su numero de empleado
+      contrasena = TELCEL
+  En su primer ingreso la pagina le pide crear su propia contrasena
+  (escribir y repetir). Desde ahi solo el la conoce.
+
+  Otros comandos:
+      python admin.py list                 (usuarios y su equipo)
+      python admin.py reset 12345          (regresa la clave a TELCEL)
+      python admin.py del  12345           (borra cuenta)
+      python admin.py setteam 12345 VENTAS (cambia de equipo)
+      python admin.py passwd 12345 ClaveX  (fija una clave directo)
+
+--------------------------------------------------------------------
+LINEAS POR EQUIPO
+--------------------------------------------------------------------
+  Cada cuenta ve SOLO las lineas de su equipo. Tu equipo (UPC) ya
+  trae cargadas tus 288 lineas con IMSI; otras areas empiezan vacias
+  y no las pueden ver.
+
+  - Dentro de la app, cada quien puede AGREGAR sus propias lineas
+    (boton "+ Guardar linea"); se comparten con su equipo y se
+    guardan en el servidor.
+  - Las lineas base (las 288) estan protegidas: no se borran desde
+    la app, solo por consola.
+
+  Administrar lineas por consola:
+      python admin.py teams                       (equipos y # de lineas)
+      python admin.py importlines UPC archivo.csv (cargar/actualizar)
+        * columnas del archivo: msisdn,imsi,usuario,oferta
+        * tambien acepta .json (lista de esos campos)
+
+--------------------------------------------------------------------
+YA ESTA MONTADO COMO SERVICIO (systemd)
+--------------------------------------------------------------------
+  Ver estado:  sudo systemctl status gencdr
+  Reiniciar:   sudo systemctl restart gencdr
+  Detener:     sudo systemctl stop gencdr
+  Ver el log:  sudo journalctl -u gencdr -f
+  (sin sudo:  su -   y luego el comando)
+
+  * admin.py corre con TU usuario (siat), NO como root: si lo corres
+    como root, los archivos quedan de root y el servicio (siat) ya no
+    los puede leer.
+
+--------------------------------------------------------------------
+COMO ACTUALIZAR A UNA VERSION NUEVA  (IMPORTANTE)
+--------------------------------------------------------------------
+  Sube SOLO los archivos de programa, encima de los viejos:
+      server.py   auth.py   admin.py   client.html   gen.py
+
+  NO subas / NO borres estos, son datos del servidor:
+      accounts.json  -> usuarios registrados
+      lines.json     -> lineas de los equipos
+      state.json     -> contadores de folios
+      secret.key     -> llave de las sesiones (se crea sola)
+
+  Luego:  sudo systemctl restart gencdr
+
+--------------------------------------------------------------------
+SIN SERVICIO (arranque manual, alternativa)
+--------------------------------------------------------------------
+  Encender:  ./start.sh
+  Apagar:    ./stop.sh
+  El servidor crea solo accounts.json / state.json / secret.key la
+  primera vez si no existen.
+
+--------------------------------------------------------------------
+NOTAS
+--------------------------------------------------------------------
+  - Puerto 5000. Si estuviera ocupado, cambia PORT en server.py y
+    reinicia; usa esa IP:puerto en el navegador.
+  - IP interna (10.x): solo entra desde la red de Telcel (cable o VPN).
+====================================================================
