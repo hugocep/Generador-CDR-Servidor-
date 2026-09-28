@@ -35,9 +35,44 @@ fi
 
 if [ ! -e CDR/SMS/NACIONAL ];then mkdir -p ./CDR/SMS/NACIONAL;fi
 
+#MOD 28-09-2026 se agrega Paises Bajos (NLD) como destino internacional si no existe en el archivo
+if ! grep -qi '^NLD_' ./datos/origen_nacional_destino_internacional.txt
+then
+if [ -n "$(tail -c1 ./datos/origen_nacional_destino_internacional.txt)" ];then echo >> ./datos/origen_nacional_destino_internacional.txt;fi
+echo "NLD_0031612345678" >> ./datos/origen_nacional_destino_internacional.txt
+fi
+
 ############################################################################################################################################
 #-----------------------------------------------------------------FUNCIONES----------------------------------------------------------------#
 ############################################################################################################################################
+
+#MOD 28-09-2026 cuando la pagina manda un parametro invalido el script se quedaba ciclado para siempre
+#en un read sin entrada (no hay teclado). Ahora si no hay nada que leer termina con un mensaje de error.
+read ()
+{
+builtin read "$@" || { echo -e "\nERROR: parametro invalido o incompleto y no hay entrada interactiva. Revise los datos capturados.\n----------EXIT----------"; exit 1; }
+}
+
+normalizaNumeroB () #MOD 28-09-2026 limpia el numero de B: quita espacios y guiones, cambia + por 00 y agrega 00 a numeros internacionales capturados sin prefijo (ej. +31 6 1234 5678 o 31612345678 -> 0031612345678)
+{
+num=$1
+if [ "$num" == "-" ] || [ "$num" == "" ]
+then
+echo "$num"
+return
+fi
+num=$(echo "$num"|tr -d ' ().-'|sed -e 's/^+/00/')
+if [[ $num =~ ^[1-9][0-9]{10,14}$ ]]
+then
+num="00"$num
+fi
+echo "$num"
+}
+
+normalizaVLR () #MOD 28-09-2026 el VLR va sin + ni 00 (ej. 31653131232), antes si se capturaba con + no se tomaba como roaming
+{
+echo "$1"|tr -d ' ().-'|sed -e 's/^+//' -e 's/^00//'
+}
 
 mesAnumeros () #transforma el mes de letras a numeros
 {
@@ -131,7 +166,8 @@ validaFecha () #valida si la fecha ingresada es correcta
 {
 
 cadenavalida=$(echo $1|grep -E '^[[:digit:]]{1,2}\/[[:digit:]]{1,2}\/[[:digit:]]{4,4}$' >/dev/null;echo $?)
-cantidadvalida=$(echo $1|awk -F'/' '{if($1>31 || $1<0) print "dia_error"; else if($2>12 || $2<0 ) print "mes_error"; else if ($3>2026 || $3<1990)print "año_error"; else print "0"}')
+#MOD 28-09-2026 el año maximo ya no esta fijo (antes 2026), es el año actual + 1
+cantidadvalida=$(echo $1|awk -F'/' -v anio_max=$(( $(date +%Y) + 1 )) '{if($1>31 || $1<0) print "dia_error"; else if($2>12 || $2<0 ) print "mes_error"; else if ($3>anio_max || $3<1990)print "año_error"; else print "0"}')
 valFechaCalendario=$(fechaCalendario $1)
 
 if [ $cadenavalida != 0 ] || [ $cantidadvalida != 0 ] || [ $valFechaCalendario != 0 ]
@@ -184,7 +220,7 @@ fi
 
 validaDestino () #Valida el grupo de destino internacional
 {
-awk -F'_' '{print $1}' ./datos/origen_nacional_destino_internacional.txt|grep -E '^'$1'$' >/dev/null
+awk -F'_' '{print $1}' ./datos/origen_nacional_destino_internacional.txt|grep -Ei '^'"$1"'$' >/dev/null
 echo $?
 }
 
@@ -233,9 +269,21 @@ echo "-----------------------------------------------"
 echo
 
 
+#MOD 28-09-2026 se limpia el numero de B (parametro 5) antes de validarlo (en marcacion CORTA se deja igual)
+if [ "$(echo ${10}|tr -d ' '|tr '[a-z]' '[A-Z]')" != "CORTA" ]
+then
+set -- "${@:1:4}" "$(normalizaNumeroB "$5")" "${@:6}"
+fi
+echo "numero B:--"$5"--"
+
 #MOD 5-6-2020
 
 edo=$6
+#MOD 28-09-2026 "-" en el destino significa sin destino (igual que vacio)
+if [ "$edo" == "-" ]
+then
+edo=""
+fi
 echo "estado:--"$edo"--"
                 
 if [ "$(grep -Eo "^$(echo $5|grep -Eo '^.....')@" ./datos/new_headers.txt)" != "" ]
@@ -286,6 +334,14 @@ cont_pais=$(grep -Eio ^"$edo"_ ./datos/origen_nacional_destino_internacional.txt
 cont_b_in_edo=$(grep -Ei "@$edo@" ./datos/new_headers.txt|grep -Eo "^$cont_b_only@")
 cont_internacional=$(echo $5|grep -Eo '^00')
 
+#MOD 28-09-2026 sin destino no se busca el estado (antes contaba las lineas con "@@" del archivo)
+if [ "$edo" == "" ]
+then
+cont_edo=0
+cont_pais=""
+cont_b_in_edo=""
+fi
+
 if [ "$edo" == "" ] && [ "$5" == "-" ]
 then
 		opcion="Nacional"
@@ -316,7 +372,8 @@ echo $5
 		exit
 fi
 
-if [ $cont_edo == 0 ] && [ "$edo" != "" ] && [ "$5" != "-" ] && [ "$cont_pais" == "" ]
+#MOD 28-09-2026 si B es internacional (00...) ya no se exige destino, se genera como Internacional con ese numero
+if [ $cont_edo == 0 ] && [ "$edo" != "" ] && [ "$5" != "-" ] && [ "$cont_pais" == "" ] && [ "$cont_internacional" != "00" ]
 then
 echo entre al 2
 		echo "Verifique el Destino"
@@ -324,7 +381,7 @@ echo entre al 2
 		exit
 fi
 
-if [ "$cont_b_in_edo" == "" ] && [ "$edo" == "" ] && [ "$5" != "-" ]
+if [ "$cont_b_in_edo" == "" ] && [ "$edo" == "" ] && [ "$5" != "-" ] && [ "$cont_internacional" != "00" ] && [ "${10}" != "CORTA" ]
 then
 echo "Verifique el Numero/Destino de B"
 echo "-----------EXIT------------"
@@ -379,7 +436,7 @@ op="CORTA"
 fi
 
 
-if [ "$6" != "-" ] && [ "$cont_pais" == "" ] && [ $cont_edo == 0 ]
+if [ "$edo" != "" ] && [ "$cont_pais" == "" ] && [ $cont_edo == 0 ] && [ "$cont_internacional" != "00" ]
 then
 
 echo "Verifique el destino"
@@ -441,7 +498,7 @@ echo "Seleccione el DESTINO: "
 										var9_sms="0052"$header$(for i in `seq 1 $longitud_header` ;do echo -n $(($RANDOM%10));done);
 										#se agrego el prefijo 0052 a los numeros generados para que se vieran reflejados den el cdrs 5/5/2020
 													
-										if [ "$5" == "-" ] && [ "$cont_edo" != "" ]
+										if [ "$5" == "-" ] && [ "$edo" != "" ] && [ "$cont_edo" != "0" ] #MOD 28-09-2026 antes siempre entraba (cont_edo nunca es vacio)
 										then
 										header=$(grep -Ei "@$edo@" ./datos/new_headers.txt|sed -n $(shuf -n 1 -i 1-$(grep -Ei "@$edo@" ./datos/new_headers.txt|wc -l))"p"|awk -F'@' '{print $1}')
 										longitud_header=$(expr 10 - $(echo $header|awk '{print length($1)}'))
@@ -517,6 +574,9 @@ echo "Seleccione el DESTINO: "
 		
 				*)
 					echo "Opcion incorrecta"
+					echo "Revise el tipo de marcacion (parametro 10)"
+					echo "----------EXIT----------"
+					exit 1 #MOD 28-09-2026 antes seguia y generaba un CDR con campos vacios
 			;;
 			esac
 		#done
@@ -527,17 +587,18 @@ echo "Seleccione el DESTINO: "
 		echo -e "\n---Destino Internacional---"
 		#read -p "Ingrese el grupo destino: " destino
 		destino=$6
+		#var9_sms=$(grep -E "^$destino" ./datos/origen_nacional_destino_internacional.txt | awk -F'_' '{print $2}')
+
+		if [ "$5" == "-" ]
+		then
+		#MOD 28-09-2026 el grupo destino solo se valida cuando B es aleatorio, si B viene capturado (00...) se usa tal cual
         while [ $(validaDestino $destino) != 0 ]
         do
         echo "Grupo incorrecto"
         read -p "Ingrese el grupo destino: " destino
         done
         echo -e "\n-----------------------------\n"
-		#var9_sms=$(grep -E "^$destino" ./datos/origen_nacional_destino_internacional.txt | awk -F'_' '{print $2}')
-
-		if [ "$5" == "-" ]
-		then
-		num_internacional=$(grep -E "^$destino\_" ./datos/origen_nacional_destino_internacional.txt | awk -F'_' '{print $2}')
+		num_internacional=$(grep -Ei "^$destino\_" ./datos/origen_nacional_destino_internacional.txt | head -1 | awk -F'_' '{print $2}')
 		echo "num internacional --> "$num_internacional
 		#mod 24-7-2020
 		#num_B=$numero_de_B
@@ -551,6 +612,9 @@ echo "Seleccione el DESTINO: "
 		;;
 		*)
 		echo "Opcion incorrecta"
+		echo "Verifique el Numero/Destino de B"
+		echo "----------EXIT----------"
+		exit 1 #MOD 28-09-2026 antes seguia y el SMS salia con el numero del propio cliente como origen (Mexico)
 		;;
 	esac
 #done
@@ -699,12 +763,15 @@ fi
 		;;
 		*)
 		echo "Opcion incorrecta"
-		
+		echo "Revise el tipo de consumo (parametro 7)"
+		echo "----------EXIT----------"
+		exit 1 #MOD 28-09-2026
 		;;
 	esac
 #done
 
-vlr=${13}
+vlr=$(normalizaVLR "${13}") #MOD 28-09-2026 se limpia el VLR (+, 00, espacios)
+echo "vlr:--"$vlr"--"
 #echo ${13}|cat -e
 #if [ $(echo ${13}|grep -e "^[0-9]\+\$") ]
 #then
@@ -762,7 +829,7 @@ then
 	longitud_header=$(expr 10 - $(echo $header|awk '{print length($1)}'))
 	var8_sms="B0330052"$header$(for i in `seq 1 $longitud_header` ;do echo -n $(($RANDOM%10));done);
 	
-	if [ "$5" == "-" ] && [ "$cont_edo" != "" ]
+	if [ "$5" == "-" ] && [ "$edo" != "" ] && [ "$cont_edo" != "0" ] #MOD 28-09-2026 antes siempre entraba (cont_edo nunca es vacio)
 	then
 		header=$(grep -Ei "@$edo@" ./datos/new_headers.txt|grep -i "TELCEL"|sort -R|head -1|awk -F'@' '{print ($1)}')
 		longitud_header=$(expr 10 - $(echo $header|awk '{print length($1)}'))
@@ -784,7 +851,7 @@ then
 	longitud_header=$(expr 10 - $(sed -n "$header_random"p ./datos/headers.txt |awk -F'@' '{print length($1)}'))
 	var8_sms="$international_prefix"$header$(for i in `seq 1 $longitud_header` ;do echo -n $(($RANDOM%10));done);
 	
-	if [ "$5" == "-" ] && [ "$cont_edo" != "" ]
+	if [ "$5" == "-" ] && [ "$edo" != "" ] && [ "$cont_edo" != "0" ] #MOD 28-09-2026 antes siempre entraba (cont_edo nunca es vacio)
 	then
 		header=$(grep -Ei "@$edo@" ./datos/new_headers.txt|sed -n $(shuf -n 1 -i 1-$(grep -Ei "@$edo@" ./datos/new_headers.txt|wc -l))"p"|awk -F'@' '{print $1}')
 		longitud_header=$(expr 10 - $(echo $header|awk '{print length($1)}'))
@@ -799,7 +866,9 @@ var8_sms="$international_prefix"$5
 
 fi
 
-if [ $7 == "ENTRANTE" ] && [ "$cont_pais" != "" ]
+#MOD 28-09-2026 antes solo entraba si el destino era un grupo del archivo; si B venia como 00... sin grupo
+#quedaba 0052+B y en CRM el SMS aparecia con pais origen Mexico
+if [ $7 == "ENTRANTE" ] && [ "$opcion" == "Internacional" ]
 then
 var8_sms=$num_internacional
 
@@ -809,7 +878,7 @@ fi
 var9_sms=$var9_sms
 #echo "num B: "$var9_sms
 #read kdk
-if [ $7 == "SALIENTE" ] && [ "$cont_pais" != "" ]
+if [ $7 == "SALIENTE" ] && [ "$opcion" == "Internacional" ] #MOD 28-09-2026 igual que en ENTRANTE
 then
 var9_sms=$num_internacional
 fi
