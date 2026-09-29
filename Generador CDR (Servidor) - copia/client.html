@@ -3,146 +3,341 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
 <title>Generador de CDRs</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='6' y='6' width='88' height='88' rx='18' fill='%230F2E57'/%3E%3Crect x='20' y='52' width='11' height='24' rx='3' fill='%23fff'/%3E%3Crect x='36' y='42' width='11' height='34' rx='3' fill='%23fff'/%3E%3Crect x='52' y='30' width='11' height='46' rx='3' fill='%23fff'/%3E%3Crect x='68' y='20' width='11' height='56' rx='3' fill='%23fff'/%3E%3C/svg%3E">
 <style>
-  :root{--blue:#3A82C7;--blue-d:#264F86;--blue-l:#5AA0E0;--ink:#15375A;--sub:#7890A8;--border:#D2E2F4;--card:#FFFFFF;--ok:#2E7D5B;--err:#C0392B;--field:#F4FAFF;--orange:#E67E22;--orange-d:#C9640F;}
-  *{box-sizing:border-box;}
-  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;color:var(--ink);min-height:100vh;background:linear-gradient(135deg,#E9F2FC 0%,#D3E4F6 45%,#DCE9F7 100%);background-size:180% 180%;animation:bgshift 18s ease infinite;padding:30px 14px 48px;}
-  @keyframes bgshift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-  .wrap{max-width:780px;margin:0 auto;}
-  .app{background:var(--card);border-radius:22px;overflow:hidden;position:relative;box-shadow:0 30px 70px rgba(24,70,130,.28),0 6px 14px rgba(24,70,130,.10);}
-  .app::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#5AA0E0,#264F86 50%,#E67E22);}
-  .header{background:linear-gradient(135deg,#5AA0E0 0%,#234B82 100%);padding:24px 28px;color:#fff;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;}
-  .header::after{content:"";position:absolute;inset:0;background:radial-gradient(500px 150px at 15% -10%,rgba(255,255,255,.25),rgba(255,255,255,0) 70%);}
-  .logo{width:52px;height:52px;flex:0 0 auto;filter:drop-shadow(0 3px 5px rgba(0,0,0,.3));position:relative;}
-  .header h1{margin:0;font-size:23px;letter-spacing:.3px;position:relative;font-weight:700;}
-  .header p{margin:4px 0 0;font-size:13px;color:#DCEAFB;position:relative;}
-  .body{padding:26px 28px 28px;}
-  .lbl{font-size:11.5px;font-weight:800;color:var(--blue-d);text-transform:uppercase;letter-spacing:.9px;margin:0 0 10px;display:flex;align-items:center;gap:7px;}
-  .seg{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
-  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;cursor:pointer;padding:11px 22px;border-radius:999px;font-size:14px;font-weight:700;background:#E9F2FC;color:#3E6C99;transition:transform .12s cubic-bezier(.3,1.4,.5,1),box-shadow .18s,background .18s;box-shadow:0 2px 6px rgba(24,70,130,.10);}
-  .pill svg{width:16px;height:16px;}
-  .pill:hover{transform:translateY(-2px);background:#DDEBF9;}
-  .pill.on{background:linear-gradient(135deg,var(--blue-l),var(--blue-d));color:#fff;box-shadow:0 8px 18px rgba(38,79,134,.45),inset 0 1px 0 rgba(255,255,255,.28);transform:translateY(-2px);}
-  .pill.on.roam{background:linear-gradient(135deg,#F0A050,var(--orange-d));box-shadow:0 8px 18px rgba(38,79,134,.45),inset 0 1px 0 rgba(255,255,255,.28);}
-  .card{background:linear-gradient(180deg,#FFFFFF,#F8FCFF);border:1px solid var(--border);border-radius:16px;padding:22px 22px 12px;box-shadow:0 10px 26px rgba(24,70,130,.10);margin-bottom:20px;}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:4px 20px;}
-  @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  .field{display:flex;flex-direction:column;margin-bottom:15px;animation:fadeInUp .28s ease both;position:relative;}
-  .field.full{grid-column:1/-1;}
-  .field label{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;}
-  .field .hint{font-size:11px;color:var(--sub);margin-top:4px;}
-  .req{color:var(--orange-d);font-weight:800;}
-  .inrow{display:flex;gap:6px;}
-  input,select{font-family:inherit;font-size:14px;color:var(--ink);background:var(--field);border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;width:100%;transition:border-color .15s,box-shadow .15s,background .15s;outline:none;box-shadow:inset 0 1px 2px rgba(24,70,130,.05);}
-  input::placeholder{color:#A9BED6;}
-  input:hover,select:hover{background:#fff;}
-  input:focus,select:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 4px rgba(58,130,199,.18);}
-  .lupa{flex:0 0 auto;width:44px;border:1.5px solid var(--border);background:#E9F2FC;border-radius:11px;cursor:pointer;color:var(--blue-d);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s;}
-  .lupa:hover{background:#DAEAF8;transform:translateY(-1px);}
-  .lupa svg{width:18px;height:18px;}
-  .unitsel{flex:0 0 auto;width:auto;min-width:60px;padding-left:8px;padding-right:6px;font-weight:600;}
-  .picker{position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--blue);border-radius:12px;box-shadow:0 14px 34px rgba(24,70,130,.28);margin-top:4px;overflow:hidden;}
-  .picksearch{border:none;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;padding:11px 13px;}
-  .picksearch:focus{box-shadow:none;border-bottom:1px solid var(--blue);}
-  .picklist{max-height:230px;overflow-y:auto;}
-  .pickitem{padding:9px 13px;font-size:13px;cursor:pointer;border-bottom:1px solid #F0F5FB;}
-  .pickitem:hover{background:#E9F2FC;}
-  .pickitem b{color:var(--ink);}
-  .pickitem .dim{color:var(--sub);font-size:11.5px;}
-  .picknone{padding:12px;color:var(--sub);font-size:12px;text-align:center;}
-  .nota{grid-column:1/-1;font-size:11.5px;color:var(--sub);font-style:italic;padding:2px 0 8px;}
-  .actions{display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
-  .btn{border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;border-radius:12px;padding:14px 28px;transition:transform .12s,box-shadow .18s,filter .18s;}
-  .btn-primary{position:relative;overflow:hidden;background:linear-gradient(135deg,#4E96DD,#234B82);color:#fff;box-shadow:0 10px 22px rgba(38,79,134,.45),inset 0 1px 0 rgba(255,255,255,.3);}
-  .btn-primary::after{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-20deg);transition:left .6s;}
-  .btn-primary:hover{transform:translateY(-2px);filter:brightness(1.07);}
-  .btn-primary:hover::after{left:130%;}
-  .btn-primary:active{transform:translateY(1px);box-shadow:0 3px 8px rgba(38,79,134,.4);}
-  .btn-ghost{background:#E9F2FC;color:var(--blue-d);box-shadow:0 2px 6px rgba(24,70,130,.12);}
-  .btn-ghost:hover{transform:translateY(-2px);background:#DDEBF9;}
-  .status{font-size:13.5px;font-weight:700;margin:8px 2px 0;min-height:20px;}
-  .status.ok{color:var(--ok);}.status.err{color:var(--err);}
-  .result{margin-top:16px;animation:fadeInUp .32s ease both;}
-  .result .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
-  .meta{font-size:12.5px;color:var(--sub);line-height:1.7;background:#F4FAFF;border:1px solid var(--border);border-radius:11px;padding:12px 14px;margin-bottom:9px;}
-  .meta b{color:var(--ink);}
-  pre.line{background:#0D2032;color:#CFE6FA;font-family:Consolas,"Courier New",monospace;font-size:12px;padding:14px;border-radius:11px;overflow-x:auto;white-space:pre;margin:0;box-shadow:inset 0 2px 10px rgba(0,0,0,.34);}
-  .pathwrap{margin-top:24px;border-top:1px dashed var(--border);padding-top:20px;}
-  .pathbar{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#11283C,#0B1D2C);border-radius:12px;padding:13px 13px 13px 16px;box-shadow:inset 0 2px 10px rgba(0,0,0,.36);transition:box-shadow .3s;}
-  .pathbar.flash{box-shadow:0 0 0 3px rgba(90,160,224,.6),inset 0 2px 10px rgba(0,0,0,.36);}
-  .pathbar .ico{flex:0 0 auto;color:#7FC0FF;}
-  .pathbar code{flex:1;color:#DCEBFA;font-family:Consolas,"Courier New",monospace;font-size:13px;word-break:break-all;user-select:all;}
-  .copybtn{flex:0 0 auto;border:none;cursor:pointer;background:#2E6BA6;color:#fff;font-weight:700;font-size:12px;border-radius:9px;padding:10px 15px;transition:background .15s,transform .12s;}
-  .copybtn:hover{background:#3A82C7;transform:translateY(-1px);}
-  .loginwrap{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#234B82,#0B1D2C);display:flex;align-items:center;justify-content:center;padding:20px;}
-  .loginbox{background:#fff;border-radius:20px;padding:28px 26px;width:100%;max-width:360px;box-shadow:0 30px 70px rgba(0,0,0,.42);text-align:center;animation:fadeInUp .3s ease both;}
-  .loginbox h2{margin:10px 0 2px;font-size:20px;color:var(--ink);}
-  .loginbox .lsub{margin:0 0 18px;font-size:14px;color:var(--sub);font-weight:700;}
-  .loginbox input{margin-bottom:10px;text-align:left;}
-  .lgerr{color:var(--err);font-size:12.5px;min-height:16px;margin-bottom:6px;text-align:left;}
-  .lgdiv{display:flex;align-items:center;color:var(--sub);font-size:12px;margin:14px 0;}
-  .lgdiv::before,.lgdiv::after{content:"";flex:1;height:1px;background:var(--border);}
-  .lgdiv span{padding:0 10px;}
-  .lnote{font-size:11.5px;color:var(--sub);margin:16px 0 0;line-height:1.5;}
-  body.locked .wrap{display:none;}
+/* =============================================================================
+   Generador de CDRs - hoja de estilos
+   Solo presentacion: el JavaScript, los campos y la logica no se modificaron.
+   Se conservan todos los id, clases (.pill .on .roam .field .full .hint .req
+   .inrow .lupa .unitsel .picker .picksearch .picklist .pickitem .dim .picknone
+   .nota .btn .btn-ghost .status .ok .err .flash) y las variables --sub --ok
+   --err --border que el script usa en sus estilos en linea.
+   Todo es local (tipografia del sistema, iconos SVG en linea): funciona sin
+   internet dentro de la red.
+   ========================================================================== */
+:root{
+  --c-brand-900:#0A2240; --c-brand-800:#0F2E57; --c-brand-700:#163C70; --c-brand-600:#1D4E8F;
+  --c-brand-500:#2862AD; --c-brand-100:#D9E4F2; --c-brand-50:#EDF2F9;
+  --c-roam-700:#9A4509; --c-roam-600:#B4530C; --c-roam-50:#FDF4EA;
+  --c-bg:#F1F3F6; --c-surface:#FFFFFF; --c-surface-2:#F7F9FB;
+  --c-border:#D5DBE3; --c-border-strong:#B7C1CD; --c-divider:#E6EAF0;
+  --c-text:#16202B; --c-text-2:#46535F; --c-text-3:#6F7B88;
+  --c-success:#17703F; --c-success-bg:#E9F5EE; --c-success-bd:#B9DEC8;
+  --c-danger:#B42318; --c-danger-bg:#FDEEEC; --c-danger-bd:#F3C3BD;
+  --r-sm:4px; --r:6px; --r-lg:8px;
+  --sh-1:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.07);
+  --sh-pop:0 14px 30px rgba(16,24,40,.16),0 3px 8px rgba(16,24,40,.08);
+  --ring:0 0 0 3px rgba(40,98,173,.25);
+  --font:"Segoe UI","Segoe UI Variable",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:Consolas,"Cascadia Mono","SFMono-Regular",Menlo,"Courier New",monospace;
+  /* nombres que usa el script: se conservan */
+  --blue:var(--c-brand-500); --blue-d:var(--c-brand-700); --blue-l:var(--c-brand-500); --ink:var(--c-text);
+  --sub:var(--c-text-2); --border:var(--c-border); --card:var(--c-surface); --ok:var(--c-success);
+  --err:var(--c-danger); --field:var(--c-surface); --orange:var(--c-roam-600); --orange-d:var(--c-roam-700);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{margin:0;min-height:100vh;background:var(--c-bg);color:var(--c-text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+body.locked .wrap{display:none;}
+h1,h2,h3,p{margin:0;}
+svg{flex:0 0 auto;}
+:where(button,input,select):focus-visible{outline:none;box-shadow:var(--ring);}
+
+/* ----------------------------------------------------------- barra superior */
+.topbar{background:var(--c-brand-900);color:#fff;border-bottom:3px solid var(--c-brand-600);}
+.topbar-in{max-width:1280px;margin:0 auto;height:58px;padding:0 24px;display:flex;align-items:center;gap:14px;}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 auto;}
+.brand-mark{width:30px;height:30px;}
+.brand-name{font-size:16px;font-weight:600;letter-spacing:.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand-sep{width:1px;height:22px;background:rgba(255,255,255,.22);}
+.brand-desc{font-size:12.5px;color:#AFC1D8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.topbar-end{margin-left:auto;display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+.env-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#CFDAE8;border:1px solid rgba(255,255,255,.22);border-radius:var(--r-sm);padding:3px 8px;white-space:nowrap;}
+#btnLogout{height:34px;padding:0 12px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);}
+#btnLogout:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.45);}
+
+/* ------------------------------------------------------------------ pagina */
+.page{max-width:1280px;margin:0 auto;padding:24px;}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;}
+@media (min-width:1100px){
+  .layout{grid-template-columns:minmax(0,1fr) 440px;}
+  .col-side{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;padding:2px;margin:-2px;}
+}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0;}
+
+.panel{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--sh-1);}
+.panel-head{display:flex;align-items:center;gap:10px;padding:13px 20px;border-bottom:1px solid var(--c-divider);}
+.panel-step{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--c-brand-50);color:var(--c-brand-700);border:1px solid var(--c-brand-100);font-size:11.5px;font-weight:700;flex:0 0 auto;}
+.panel-title{font-size:14.5px;font-weight:600;color:var(--c-text);}
+.panel-desc{margin-left:auto;font-size:12px;color:var(--c-text-3);text-align:right;}
+.panel-body{padding:18px 20px 20px;}
+.panel-foot{padding:14px 20px;border-top:1px solid var(--c-divider);background:var(--c-surface-2);border-radius:0 0 var(--r-lg) var(--r-lg);}
+
+/* ------------------------------------------- paso 1: tipo de CDR y ambito */
+.config{display:flex;flex-wrap:wrap;gap:18px 32px;}
+.config-group{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.group-label{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--c-text-3);}
+.seg{display:inline-flex;flex-wrap:wrap;gap:3px;padding:3px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-lg);}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:108px;height:34px;padding:0 14px;border:0;border-radius:var(--r);background:transparent;color:var(--c-text-2);font:600 12.5px/1 var(--font);letter-spacing:.05em;cursor:pointer;transition:background-color .15s,color .15s,box-shadow .15s;}
+.pill svg{width:15px;height:15px;}
+.pill:hover{background:var(--c-surface);color:var(--c-text);}
+.pill.on{background:var(--c-brand-700);color:#fff;box-shadow:0 1px 2px rgba(10,34,64,.35);}
+.pill.on.roam{background:var(--c-roam-600);box-shadow:0 1px 2px rgba(154,69,9,.35);}
+
+/* --------------------------------------------------- paso 2: formulario */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px 20px;}
+.field{display:flex;flex-direction:column;position:relative;min-width:0;}
+.field.full{grid-column:1/-1;}
+.field label{font-size:12.5px;font-weight:600;color:var(--c-text);margin-bottom:6px;}
+.field .hint{font-size:12px;line-height:1.4;color:var(--c-text-3);margin-top:5px;}
+.req{color:var(--c-danger);font-weight:700;}
+.field > .btn{align-self:flex-start;}
+.nota{grid-column:1/-1;font-size:12px;color:var(--c-text-3);}
+/* avisos que crea el script con estilos en linea (UTC en roaming, explicacion ENTRANTE/SALIENTE): solo radio */
+#form > .field.full > div[style]{border-radius:var(--r)!important;}
+
+:where(input:not([type=checkbox]):not([type=radio])),:where(select){
+  width:100%;height:38px;padding:0 11px;font:inherit;font-size:14px;color:var(--c-text);
+  background:var(--c-surface);border:1px solid var(--c-border-strong);border-radius:var(--r);
+  outline:none;transition:border-color .15s,box-shadow .15s;}
+:where(input:not([type=checkbox]):not([type=radio]))::placeholder{color:#97A3B0;}
+:where(input:not([type=checkbox]):not([type=radio]),select):hover{border-color:#8F9CAB;}
+:where(input:not([type=checkbox]):not([type=radio]),select):focus{border-color:var(--c-brand-500);box-shadow:var(--ring);}
+:where(select){padding-right:8px;cursor:pointer;}
+
+.inrow{display:flex;align-items:stretch;}
+.inrow > input{min-width:0;flex:1 1 auto;border-top-right-radius:0;border-bottom-right-radius:0;}
+.inrow > .lupa,.inrow > .unitsel{margin-left:-1px;border-top-left-radius:0;border-bottom-left-radius:0;}
+.inrow > input:focus{position:relative;z-index:1;}
+.lupa{flex:0 0 auto;width:40px;height:38px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--c-border-strong);border-radius:var(--r);background:var(--c-surface-2);color:var(--c-text-2);cursor:pointer;transition:background-color .15s,color .15s;}
+.lupa:hover{background:var(--c-brand-50);color:var(--c-brand-700);}
+.lupa svg{width:17px;height:17px;}
+.unitsel{flex:0 0 auto;width:auto;min-width:74px;background:var(--c-surface-2);font-weight:600;}
+
+/* lista desplegable de la lupa */
+.picker{position:absolute;left:0;right:0;top:100%;z-index:50;margin-top:4px;background:var(--c-surface);border:1px solid var(--c-border-strong);border-radius:var(--r-lg);box-shadow:var(--sh-pop);overflow:hidden;}
+.picker .picksearch{height:40px;border:0;border-bottom:1px solid var(--c-divider);border-radius:0;box-shadow:none;background:var(--c-surface);}
+.picker .picksearch:focus{box-shadow:none;border-bottom-color:var(--c-brand-500);}
+.picker .btn{height:auto;}
+.picklist{max-height:260px;overflow-y:auto;}
+.pickitem{padding:8px 12px;font-size:13px;color:var(--c-text-2);cursor:pointer;border-bottom:1px solid var(--c-divider);}
+.pickitem:last-child{border-bottom:0;}
+.pickitem:hover{background:var(--c-brand-50);}
+.pickitem b{color:var(--c-text);font-weight:600;}
+.pickitem .dim{color:var(--c-text-3);font-size:12px;}
+.picknone{padding:14px;font-size:12.5px;color:var(--c-text-3);text-align:center;}
+
+/* ------------------------------------------------------------------ botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 16px;border:1px solid transparent;border-radius:var(--r);font:600 13.5px/1 var(--font);white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s;}
+.btn svg{width:16px;height:16px;}
+.btn-primary{background:var(--c-brand-600);color:#fff;}
+.btn-primary:hover{background:var(--c-brand-700);}
+.btn-primary:active{background:var(--c-brand-800);}
+.btn-ghost{background:var(--c-surface);color:var(--c-text);border-color:var(--c-border-strong);}
+.btn-ghost:hover{background:var(--c-surface-2);border-color:#8F9CAB;}
+.btn-link{background:transparent;color:var(--c-brand-600);padding:0 8px;}
+.btn-link:hover{background:var(--c-brand-50);}
+.btn-block{width:100%;}
+.btn-lg{height:42px;font-size:14px;}
+.btn-sm{height:30px;padding:0 11px;font-size:12px;}
+.btn:disabled{cursor:not-allowed;opacity:.55;}
+
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+.actions-end{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+#folderLbl{font-size:12px;color:var(--c-text-3);}
+
+/* mensaje de estado del generador */
+.status{margin-top:14px;padding:9px 12px;border:1px solid var(--c-brand-100);border-left-width:3px;border-radius:var(--r);background:var(--c-brand-50);color:var(--c-text-2);font-size:13px;font-weight:500;overflow-wrap:anywhere;}
+.status:empty{display:none;}
+.status.ok{background:var(--c-success-bg);border-color:var(--c-success-bd);border-left-color:var(--c-success);color:var(--c-success);}
+.status.err{background:var(--c-danger-bg);border-color:var(--c-danger-bd);border-left-color:var(--c-danger);color:var(--c-danger);}
+
+/* -------------------------------------------------------- paso 3: resultado */
+.result-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.result-bar span{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--c-text-3);}
+.meta{margin-bottom:10px;padding:10px 12px;font-size:12.5px;line-height:1.75;color:var(--c-text-2);background:var(--c-surface-2);border:1px solid var(--c-divider);border-radius:var(--r);overflow-wrap:anywhere;}
+.meta b{color:var(--c-text);font-weight:600;}
+pre.line{margin:0;max-height:260px;overflow:auto;padding:12px 14px;background:#0F1B2A;color:#D3E1F0;border-radius:var(--r);font:12px/1.6 var(--mono);white-space:pre;}
+.empty-state{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;text-align:center;color:var(--c-text-3);font-size:13px;border:1px dashed var(--c-border);border-radius:var(--r);background:var(--c-surface-2);}
+.empty-state svg{width:28px;height:28px;color:#A3AEBB;}
+.empty-state b{color:var(--c-text-2);font-weight:600;}
+#result[style*="block"] ~ .empty-state{display:none;}
+
+/* -------------------------------------------------------- paso 4: inyeccion */
+.sub-label{display:block;margin-bottom:6px;font-size:12.5px;font-weight:600;color:var(--c-text);}
+.path-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.path-head .sub-label{margin:0;}
+.pathbar{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:var(--r);transition:border-color .3s,box-shadow .3s;}
+.pathbar.flash{border-color:var(--c-brand-500);box-shadow:var(--ring);}
+.pathbar .ico{color:var(--c-text-3);}
+.pathbar code{flex:1;min-width:0;font:11.5px/1.45 var(--mono);color:var(--c-text);overflow-wrap:anywhere;user-select:all;}
+.copybtn{flex:0 0 auto;height:30px;padding:0 11px;border:1px solid var(--c-border-strong);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:600 12px/1 var(--font);white-space:nowrap;cursor:pointer;transition:background-color .15s;}
+.copybtn:hover{background:var(--c-brand-50);}
+.inject-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.check{display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:12.5px;color:var(--c-text-2);cursor:pointer;line-height:1.4;}
+.check input{width:15px;height:15px;margin:1px 0 0;accent-color:var(--c-brand-600);flex:0 0 auto;}
+#inyStatus{min-height:18px;margin-top:10px;font-size:12.5px;text-align:center;color:var(--c-text-2);overflow-wrap:anywhere;}
+
+.app-footer{max-width:1280px;margin:0 auto;padding:0 24px 28px;}
+
+/* ------------------------------------------------------------------- login */
+.loginwrap{position:fixed;inset:0;z-index:9999;overflow:auto;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--c-bg);}
+.login-card{display:grid;grid-template-columns:1fr;width:100%;max-width:860px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;box-shadow:var(--sh-pop);overflow:hidden;}
+@media (min-width:780px){.login-card{grid-template-columns:1fr 1fr;}}
+.login-aside{display:flex;flex-direction:column;gap:18px;padding:32px;background:var(--c-brand-900);color:#fff;background-image:linear-gradient(160deg,var(--c-brand-800) 0%,var(--c-brand-900) 70%);}
+.login-aside .brand-mark{width:40px;height:40px;}
+.login-aside h1{font-size:22px;font-weight:600;letter-spacing:.1px;}
+.login-aside p{font-size:13.5px;line-height:1.55;color:#C3D1E3;}
+.login-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#DCE5F1;}
+.login-list li{display:flex;align-items:center;gap:9px;}
+.login-list li::before{content:"";width:6px;height:6px;border-radius:50%;background:#7FA6D6;flex:0 0 auto;}
+.login-aside small{margin-top:auto;font-size:11.5px;color:#8FA5C0;letter-spacing:.02em;}
+.loginbox{padding:36px 36px 32px;}
+.loginbox h2{font-size:20px;font-weight:600;color:var(--c-text);}
+.loginbox .lsub{margin:4px 0 22px;font-size:13.5px;color:var(--c-text-2);}
+.loginbox label{display:block;margin-bottom:6px;font-size:12.5px;font-weight:600;color:var(--c-text);}
+.loginbox input{margin-bottom:14px;height:40px;}
+.lgerr{min-height:18px;margin:-4px 0 12px;font-size:12.5px;color:var(--c-danger);}
+.loginbox .btn{width:100%;height:42px;font-size:14px;}
+
+@media (max-width:720px){
+  .topbar-in{padding:0 16px;}
+  .brand-sep,.brand-desc,.env-tag{display:none;}
+  #btnLogout{font-size:0;gap:0;padding:0 10px;}
+  .actions > .btn{flex:1 1 100%;}
+  .actions-end{margin-left:0;flex:1 1 100%;justify-content:space-between;}
+  .page{padding:16px;}
+  .panel-head,.panel-body,.panel-foot{padding-left:16px;padding-right:16px;}
+  .panel-desc{display:none;}
+  .pill{min-width:0;flex:1 1 auto;}
+  .seg{display:flex;}
+  .config-group{flex:1 1 100%;}
+  .loginbox,.login-aside{padding:26px 22px;}
+  .app-footer{padding:0 16px 24px;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
 </head>
 <body class="locked">
 <div id="login" class="loginwrap">
-  <div class="loginbox" id="loginbox">
-    <svg viewBox="0 0 100 100" width="46" height="46" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto;display:block;"><rect x="6" y="6" width="88" height="88" rx="21" fill="#234B82"/><rect x="20" y="52" width="11" height="24" rx="3" fill="#fff"/><rect x="36" y="42" width="11" height="34" rx="3" fill="#fff"/><rect x="52" y="30" width="11" height="46" rx="3" fill="#fff"/><rect x="68" y="20" width="11" height="56" rx="3" fill="#fff"/></svg>
-    <h2>Generador de CDRs</h2>
-    <p class="lsub">Ingresa con tu n&uacute;mero de empleado</p>
-    <input id="lguser" placeholder="N&uacute;mero de empleado" autocomplete="off">
-    <input id="lgpass" type="password" placeholder="Contrase&ntilde;a" autocomplete="off">
-    <div id="lgerr" class="lgerr"></div>
-    <button class="btn btn-primary" id="btnLogin" style="width:100%;">Ingresar</button>
-  </div>
-  <div class="loginbox" id="chpassbox" style="display:none;">
-    <svg viewBox="0 0 100 100" width="46" height="46" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto;display:block;"><rect x="6" y="6" width="88" height="88" rx="21" fill="#234B82"/><rect x="20" y="52" width="11" height="24" rx="3" fill="#fff"/><rect x="36" y="42" width="11" height="34" rx="3" fill="#fff"/><rect x="52" y="30" width="11" height="46" rx="3" fill="#fff"/><rect x="68" y="20" width="11" height="56" rx="3" fill="#fff"/></svg>
-    <h2>Cambia tu contrase&ntilde;a</h2>
-    <p class="lsub">Primer ingreso: define una contrase&ntilde;a nueva (m&iacute;nimo 6).</p>
-    <input id="cpNew" type="password" placeholder="Nueva contrase&ntilde;a" autocomplete="off">
-    <input id="cpNew2" type="password" placeholder="Repite la contrase&ntilde;a" autocomplete="off">
-    <div id="cperr" class="lgerr"></div>
-    <button class="btn btn-primary" id="btnChpass" style="width:100%;">Guardar y entrar</button>
+  <div class="login-card">
+    <aside class="login-aside">
+      <svg class="brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="6" y="6" width="88" height="88" rx="18" fill="rgba(255,255,255,.14)"/><rect x="20" y="52" width="11" height="24" rx="3" fill="#fff"/><rect x="36" y="42" width="11" height="34" rx="3" fill="#fff"/><rect x="52" y="30" width="11" height="46" rx="3" fill="#fff"/><rect x="68" y="20" width="11" height="56" rx="3" fill="#fff"/></svg>
+      <div>
+        <h1>Generador de CDRs</h1>
+        <p>Genera e inyecta registros de prueba (.unl) para las rutas de tarificaci&oacute;n.</p>
+      </div>
+      <ul class="login-list">
+        <li>Datos, Voz y SMS</li>
+        <li>&Aacute;mbito nacional y roaming</li>
+        <li>Registros individuales o por lote</li>
+      </ul>
+      <small>Herramienta de uso interno</small>
+    </aside>
+    <div>
+      <div class="loginbox" id="loginbox">
+        <h2>Iniciar sesi&oacute;n</h2>
+        <p class="lsub">Ingresa con tu n&uacute;mero de empleado</p>
+        <label for="lguser">N&uacute;mero de empleado</label>
+        <input id="lguser" placeholder="Ej. 12345" autocomplete="off">
+        <label for="lgpass">Contrase&ntilde;a</label>
+        <input id="lgpass" type="password" placeholder="Contrase&ntilde;a" autocomplete="off">
+        <div id="lgerr" class="lgerr" role="alert"></div>
+        <button class="btn btn-primary" id="btnLogin">Ingresar</button>
+      </div>
+      <div class="loginbox" id="chpassbox" style="display:none;">
+        <h2>Cambia tu contrase&ntilde;a</h2>
+        <p class="lsub">Primer ingreso: define una contrase&ntilde;a nueva (m&iacute;nimo 6 caracteres).</p>
+        <label for="cpNew">Nueva contrase&ntilde;a</label>
+        <input id="cpNew" type="password" placeholder="Nueva contrase&ntilde;a" autocomplete="off">
+        <label for="cpNew2">Confirmar contrase&ntilde;a</label>
+        <input id="cpNew2" type="password" placeholder="Repite la contrase&ntilde;a" autocomplete="off">
+        <div id="cperr" class="lgerr" role="alert"></div>
+        <button class="btn btn-primary" id="btnChpass">Guardar y entrar</button>
+      </div>
+    </div>
   </div>
 </div>
-<div class="wrap"><div class="app">
-  <div class="header">
-    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="6" width="88" height="88" rx="21" fill="rgba(255,255,255,.16)"/><rect x="20" y="52" width="11" height="24" rx="3" fill="#fff"/><rect x="36" y="42" width="11" height="34" rx="3" fill="#fff"/><rect x="52" y="30" width="11" height="46" rx="3" fill="#fff"/><rect x="68" y="20" width="11" height="56" rx="3" fill="#fff"/></svg>
-    <div><h1>Generador de CDRs</h1><p>Voz &middot; Datos &middot; SMS &mdash; Nacional y Roaming (.unl)</p></div>
-    <button id="btnLogout" class="btn btn-ghost" title="Cerrar sesión" onclick="salir()" style="margin-left:auto;display:none;position:relative;z-index:3;padding:8px 11px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
-  </div>
-  <div class="body">
-    <p class="lbl">Tipo de CDR</p>
-    <div class="seg" id="segTipo"></div>
-    <p class="lbl">&Aacute;mbito</p>
-    <div class="seg" id="segAmbito"></div>
-    <div class="card"><div class="grid" id="form"></div></div>
-    <div class="actions">
-      <button class="btn btn-primary" id="btnGen">Generar CDR</button>
-      <button class="btn btn-ghost" id="btnBatch" style="display:none;">Crear varios registros (Batch)</button>
-      <button class="btn btn-ghost" id="btnFolder">Elegir carpeta (opcional)</button>
-      <span class="hint" id="folderLbl" style="font-size:11px;color:var(--sub);"></span>
+<div class="wrap">
+  <header class="topbar">
+    <div class="topbar-in">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="6" y="6" width="88" height="88" rx="18" fill="rgba(255,255,255,.14)"/><rect x="20" y="52" width="11" height="24" rx="3" fill="#fff"/><rect x="36" y="42" width="11" height="34" rx="3" fill="#fff"/><rect x="52" y="30" width="11" height="46" rx="3" fill="#fff"/><rect x="68" y="20" width="11" height="56" rx="3" fill="#fff"/></svg>
+        <span class="brand-name">Generador de CDRs</span>
+        <span class="brand-sep" aria-hidden="true"></span>
+        <span class="brand-desc">Voz &middot; Datos &middot; SMS &mdash; Nacional y Roaming (.unl)</span>
+      </div>
+      <div class="topbar-end">
+        <span class="env-tag">Uso interno</span>
+        <button id="btnLogout" class="btn" title="Cerrar sesi&oacute;n" onclick="salir()" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar sesi&oacute;n</button>
+      </div>
     </div>
-    <div class="status" id="status"></div>
-    <div class="result" id="result" style="display:none;">
-      <div class="head"><p class="lbl" style="margin:0;">Resultado</p><button class="btn btn-ghost" id="btnCopy" style="padding:7px 15px;font-size:12px;">Copiar l&iacute;nea</button></div>
-      <div class="meta" id="meta"></div><pre class="line" id="line"></pre>
+  </header>
+
+  <main class="page">
+    <div class="layout">
+      <div class="col">
+        <section class="panel" aria-labelledby="t1">
+          <div class="panel-head"><span class="panel-step">1</span><h2 class="panel-title" id="t1">Tipo de registro</h2><span class="panel-desc">Define qu&eacute; CDR vas a generar</span></div>
+          <div class="panel-body">
+            <div class="config">
+              <div class="config-group"><span class="group-label" id="lblTipo">Tipo de CDR</span><div class="seg" id="segTipo" role="group" aria-labelledby="lblTipo"></div></div>
+              <div class="config-group"><span class="group-label" id="lblAmb">&Aacute;mbito</span><div class="seg" id="segAmbito" role="group" aria-labelledby="lblAmb"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="t2">
+          <div class="panel-head"><span class="panel-step">2</span><h2 class="panel-title" id="t2">Datos del registro</h2><span class="panel-desc">Los campos cambian seg&uacute;n el tipo y el &aacute;mbito</span></div>
+          <div class="panel-body"><div class="grid" id="form"></div></div>
+          <div class="panel-foot">
+            <div class="actions">
+              <button class="btn btn-primary btn-lg" id="btnGen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></svg>Generar CDR</button>
+              <button class="btn btn-ghost btn-lg" id="btnBatch" style="display:none;">Crear varios registros (Batch)</button>
+              <div class="actions-end">
+                <span id="folderLbl"></span>
+                <button class="btn btn-link" id="btnFolder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Elegir carpeta (opcional)</button>
+              </div>
+            </div>
+            <div class="status" id="status" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col col-side">
+        <section class="panel" aria-labelledby="t3">
+          <div class="panel-head"><span class="panel-step">3</span><h2 class="panel-title" id="t3">Resultado</h2><span class="panel-desc">Vista previa del archivo .unl</span></div>
+          <div class="panel-body">
+            <div class="result" id="result" style="display:none;">
+              <div class="result-bar"><span>Registro generado</span><button class="btn btn-ghost btn-sm" id="btnCopy">Copiar l&iacute;nea</button></div>
+              <div class="meta" id="meta"></div>
+              <pre class="line" id="line"></pre>
+            </div>
+            <div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><b>A&uacute;n no hay un CDR generado</b>Captura los datos y presiona &laquo;Generar CDR&raquo;.</div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="t4">
+          <div class="panel-head"><span class="panel-step">4</span><h2 class="panel-title" id="t4">Inyecci&oacute;n</h2><span class="panel-desc">Env&iacute;a el &uacute;ltimo CDR generado</span></div>
+          <div class="panel-body">
+            <div class="path-head"><span class="sub-label">Ruta de inyecci&oacute;n (WinSCP)</span><button class="copybtn" id="btnCopyRuta">Copiar ruta</button></div>
+            <div class="pathbar" id="pathbar"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><code id="rutaPath"></code></div>
+            <div class="inject-actions">
+              <button class="btn btn-primary btn-lg btn-block" id="btnInyectar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Inyectar por FTP</button>
+              <button class="btn btn-ghost btn-block" id="btnDescargar" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar .unl (opcional, para revisar)</button>
+            </div>
+            <label id="autoWrap" class="check"><input type="checkbox" id="autosave"> Autoguardar .unl al generar (sin dar clic en Descargar)</label>
+            <div id="inyStatus" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
     </div>
-    <div class="pathwrap">
-      <p class="lbl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Ruta de inyecci&oacute;n (WinSCP)</p>
-      <div class="pathbar" id="pathbar"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><code id="rutaPath"></code><button class="copybtn" id="btnCopyRuta">Copiar ruta</button></div>
-      <button class="btn btn-primary" id="btnInyectar" style="margin-top:12px;width:100%;padding:13px;font-size:14px;">&#9889; Inyectar por FTP (1 clic)</button>
-      <button class="btn" id="btnDescargar" style="display:none;margin-top:8px;width:100%;padding:11px;font-size:13px;">&#11015; Descargar .unl (opcional, para revisar)</button>
-      <label id="autoWrap" style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12.5px;color:var(--sub);cursor:pointer;"><input type="checkbox" id="autosave" style="width:auto;flex:0 0 auto;margin:0;box-shadow:none;"> Autoguardar .unl al generar (sin dar clic en Descargar)</label>
-      <div id="inyStatus" style="font-size:12px;margin-top:8px;text-align:center;min-height:16px;color:var(--sub);"></div>
-    </div>
-    <div id="sig"></div>
-  </div>
-</div></div>
+  </main>
+
+  <footer class="app-footer"><div id="sig"></div></footer>
+</div>
 <script>
 const VLR_ITEMS=[{"pais":"Afganistan","vlr":"99","msc":"93799654000"},{"pais":"Albania","vlr":"69","msc":"355697650030"},{"pais":"Alemania","vlr":"23001","msc":"4955419562050"},{"pais":"Andorra","vlr":"99","msc":"376877777"},{"pais":"Angola","vlr":"920","msc":"244222642600"},{"pais":"Argelia","vlr":"99","msc":"21343401111"},{"pais":"Argentina","vlr":"115174","msc":"541148910000"},{"pais":"Armenia","vlr":"93","msc":"37410294141"},{"pais":"Aruba","vlr":"99","msc":"2975201100"},{"pais":"Australia","vlr":"411","msc":"61740416566"},{"pais":"Austria","vlr":"660","msc":"43720883414"},{"pais":"Bahamas","vlr":"36439","msc":"12423633000"},{"pais":"Bangladesh","vlr":"18","msc":"880255663030"},{"pais":"Barbados","vlr":"99","msc":"12464260200"},{"pais":"Barein","vlr":"33","msc":"97317636363"},{"pais":"Belgica","vlr":"475","msc":"3222194343"},{"pais":"Belice","vlr":"61","msc":"5012232670"},{"pais":"Bermuda","vlr":"790","msc":"14412971200"},{"pais":"Bolivia","vlr":"70","msc":"59133718000"},{"pais":"Brasil","vlr":"005","msc":"551128786400"},{"pais":"Brunei","vlr":"99","msc":"6732418888"},{"pais":"Bulgaria","vlr":"88","msc":"35955424130"},{"pais":"Cabo Verde","vlr":"99","msc":"2382421800"},{"pais":"Camboya","vlr":"12","msc":"85523936888"},{"pais":"Camerun","vlr":"99","msc":"237222233646"},{"pais":"Canada","vlr":"647383","msc":"16044741020"},{"pais":"Chile","vlr":"920","msc":"56931705436"},{"pais":"China","vlr":"1340","msc":"861065322070"},{"pais":"Chipre","vlr":"95","msc":"35724645444"},{"pais":"Colombia","vlr":"310","msc":"5714199999"},{"pais":"Costa Rica","vlr":"7000","msc":"50620106000"},{"pais":"Croacia","vlr":"91","msc":"38551850234"},{"pais":"Cuba","vlr":"5","msc":"5358090577"},{"pais":"Dinamarca","vlr":"2813","msc":"4575331333"},{"pais":"Dominica","vlr":"99","msc":"17674451000"},{"pais":"Ecuador","vlr":"9799","msc":"59342109000"},{"pais":"Egipto","vlr":"10","msc":"20233773222"},{"pais":"Eslovaquia","vlr":"903","msc":"421442901322"},{"pais":"Eslovenia","vlr":"70","msc":"38659128000"},{"pais":"Espana","vlr":"6022","msc":"34615878068"},{"pais":"Espana","vlr":"6022","msc":"34615878068"},{"pais":"Estonia","vlr":"50","msc":"3724401017"},{"pais":"Etiopia","vlr":"99","msc":"251918560295"},{"pais":"Fiji","vlr":"9014","msc":"6793307090"},{"pais":"Filipinas","vlr":"916","msc":"63322310288"},{"pais":"Finlandia","vlr":"44","msc":"358444194000"},{"pais":"Francia","vlr":"20801","msc":"33951333484"},{"pais":"Georgia","vlr":"99","msc":"99542222"},{"pais":"Ghana","vlr":"20","msc":"233302213161"},{"pais":"Granada","vlr":"99","msc":"14734444371"},{"pais":"Grecia","vlr":"694","msc":"302103320100"},{"pais":"Groenlandia","vlr":"99","msc":"299321029"},{"pais":"Guam","vlr":"99","msc":"16716478855"},{"pais":"Guatemala","vlr":"70403","msc":"50224105000"},{"pais":"Guinea","vlr":"99","msc":"224626333333"},{"pais":"Guyana","vlr":"99","msc":"5922312480"},{"pais":"Haiti","vlr":"99","msc":"50928151000"},{"pais":"Holanda","vlr":"624","msc":"31302910366"},{"pais":"Honduras","vlr":"3399","msc":"50489877739"},{"pais":"Hong Kong","vlr":"57","msc":"85222632263"},{"pais":"Hungria","vlr":"20","msc":"3612686000"},{"pais":"India","vlr":"6909","msc":"912266653366"},{"pais":"Indonesia","vlr":"811","msc":"62361769222"},{"pais":"Irlanda","vlr":"83","msc":"353906442005"},{"pais":"Islandia","vlr":"69","msc":"3544834959"},{"pais":"Islas Caiman","vlr":"99","msc":"13459490088"},{"pais":"Israel","vlr":"56","msc":"97235212518"},{"pais":"Italia","vlr":"3519","msc":"390687153251"},{"pais":"Jamaica","vlr":"33805","msc":"18769790000"},{"pais":"Japon","vlr":"90130","msc":"81188652243"},{"pais":"Jordania","vlr":"99","msc":"96232156407"},{"pais":"Kuwait","vlr":"41","msc":"96522006000"},{"pais":"Letonia","vlr":"2585","msc":"37123775377"},{"pais":"Libano","vlr":"34","msc":"9611747711"},{"pais":"Liberia","vlr":"99","msc":"231555777888"},{"pais":"Lituania","vlr":"62100999","msc":"37052338822"},{"pais":"Luxemburgo","vlr":"061","msc":"352437761"},{"pais":"Macao","vlr":"634","msc":"85328828833"},{"pais":"Macedonia","vlr":"77","msc":"38925102510"},{"pais":"Madagascar","vlr":"99","msc":"261320265598"},{"pais":"Malasia","vlr":"12","msc":"60321178000"},{"pais":"Malawi","vlr":"99","msc":"2651820955"},{"pais":"Maldivas","vlr":"9607","msc":"9606680901"},{"pais":"Mali","vlr":"760","msc":"22320214321"},{"pais":"Malta","vlr":"79","msc":"35621334001"},{"pais":"Marruecos","vlr":"66399","msc":"212524389770"},{"pais":"Monaco","vlr":"40","msc":"37799998300"},{"pais":"Montenegro","vlr":"69","msc":"38233420000"},{"pais":"Montserrat","vlr":"99","msc":"16644918767"},{"pais":"Mozambique","vlr":"99","msc":"25829382391"},{"pais":"México","vlr":"94100","msc":"525543692618"},{"pais":"Namibia","vlr":"99","msc":"26464550826"},{"pais":"Nepal","vlr":"980","msc":"97761462222"},{"pais":"Nicaragua","vlr":"609","msc":"50522660686"},{"pais":"Nigeria","vlr":"99","msc":"2347080603000"},{"pais":"Noruega","vlr":"4171","msc":"4723212000"},{"pais":"Oman","vlr":"99","msc":"96825344200"},{"pais":"Panama","vlr":"71402","msc":"5072125700"},{"pais":"Paquistan","vlr":"99","msc":"9221111505505"},{"pais":"Paraguay","vlr":"98","msc":"59521600399"},{"pais":"Peru","vlr":"99799","msc":"5112008000"},{"pais":"Polonia","vlr":"501","msc":"48585206000"},{"pais":"Portugal","vlr":"93","msc":"351289304000"},{"pais":"Reunion","vlr":"99","msc":"262262244444"},{"pais":"Rumania","vlr":"76","msc":"40213102020"},{"pais":"Rusia","vlr":"25001","msc":"78005000774"},{"pais":"Senegal","vlr":"7763","msc":"221338693333"},{"pais":"Serbia","vlr":"61","msc":"38163396794"},{"pais":"Seychelles","vlr":"99","msc":"2484299000"},{"pais":"Singapur","vlr":"9024","msc":"6566888868"},{"pais":"Sri Lanka","vlr":"117","msc":"94665555000"},{"pais":"Sudafrica","vlr":"82","msc":"27214040570"},{"pais":"Sudan","vlr":"91","msc":"249912317433"},{"pais":"Suecia","vlr":"705","msc":"46850506000"},{"pais":"Suiza","vlr":"76","msc":"41416126000"},{"pais":"Surinam","vlr":"99","msc":"597531000"},{"pais":"Tailandia","vlr":"818010","msc":"6620218888"},{"pais":"Taiwan","vlr":"9314","msc":"886422297161"},{"pais":"Tanzania","vlr":"76","msc":"255768981981"},{"pais":"Tunez","vlr":"99","msc":"21673225700"},{"pais":"Turquia","vlr":"532","msc":"902129394500"},{"pais":"Ucrania","vlr":"50","msc":"380442782804"},{"pais":"Uganda","vlr":"99","msc":"256312554000"},{"pais":"Uruguay","vlr":"94","msc":"59826046060"},{"pais":"Uzbekistan","vlr":"99","msc":"998711131111"},{"pais":"Venezuela","vlr":"99","msc":"584142391409"},{"pais":"Vietnam","vlr":"91","msc":"842438238855"}];
 function maskDT(el,type){let v=el.value.replace(/\D/g,"");const sep=type==="date"?"/":":";const max=type==="date"?8:6;v=v.slice(0,max);let out=v.slice(0,2);if(v.length>2)out+=sep+v.slice(2,4);if(v.length>4)out+=sep+v.slice(4,max);el.value=out;}
