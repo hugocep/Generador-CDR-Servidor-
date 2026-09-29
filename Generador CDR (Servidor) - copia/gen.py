@@ -90,6 +90,12 @@ def gen_sms(i, oid, fn):
     if i.get("vlr"):
         s(6, i["vlr"])
     s(53, i.get("imsi", "")); s(56, i.get("msc") or MSC_MX)
+    # MOD 29-09-2026 SMS ENTRANTE en roaming: el pais lo da donde esta el cliente (red visitada),
+    # no el numero que manda. Esa ubicacion va en el campo 58 (MSC de la red visitada), el 56
+    # queda vacio y 51/52 en 1, igual que new_sms_nacional_campos.sh. Antes el 58 quedaba vacio
+    # y en CRM salia Mexico por defecto.
+    if ent and (i.get("vlr") or i.get("msc")):
+        s(56, ""); s(58, i.get("msc") or MSC_MX); s(51, "1"); s(52, "1")
     return "|".join(f)
 
 def gen_date():
